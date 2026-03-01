@@ -137,6 +137,8 @@ app.set('trust proxy', 1);
 // cross-origin responses even if the server sends it — the browser hides it.
 // useSeekOptimizer's HEAD request needs this to set contentLengthRef.
 app.use(cors({
+  origin: true,
+  credentials: true,
   exposedHeaders: ['Content-Length', 'Content-Range', 'Accept-Ranges'],
 }));
 
