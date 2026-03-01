@@ -1,0 +1,1202 @@
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #0a0a0a;
+  color: #ffffff;
+}
+
+/* App Layout */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.app-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.app-header p {
+  color: #a0a0a0;
+  font-size: 1rem;
+}
+
+.app-main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.app-footer {
+  background: #1a1a1a;
+  padding: 1.5rem;
+  text-align: center;
+  border-top: 1px solid #333;
+}
+
+.app-footer p {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.app-footer kbd {
+  background: #2a2a2a;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  margin: 0 0.3rem;
+  font-family: monospace;
+  font-size: 0.85rem;
+  border: 1px solid #444;
+}
+
+/* URL Input Component */
+.url-input-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.url-input-card {
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 3rem;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid #2a2a2a;
+}
+
+.url-input-card h2 {
+  margin-bottom: 2rem;
+  text-align: center;
+  color: #ffffff;
+}
+
+.input-group {
+  margin-bottom: 1.5rem;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #b0b0b0;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.url-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: #2a2a2a;
+  border: 2px solid #3a3a3a;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.url-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.input-with-button {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.input-with-button .url-input {
+  flex: 1;
+}
+
+.btn-paste {
+  padding: 0.875rem 1.5rem;
+  background: #3a3a3a;
+  border: 2px solid #4a4a4a;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-paste:hover {
+  background: #4a4a4a;
+  border-color: #5a5a5a;
+}
+
+.checkbox-group {
+  margin-bottom: 1.5rem;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #b0b0b0;
+}
+
+.checkbox-group input[type="checkbox"] {
+  margin-right: 0.75rem;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.checkbox-group span {
+  font-size: 0.95rem;
+}
+
+.quality-inputs {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #252525;
+  border-radius: 8px;
+  border: 1px solid #3a3a3a;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-submit:active {
+  transform: translateY(0);
+}
+
+.info-box {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #252525;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.info-box h4 {
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.info-box p {
+  color: #888;
+  font-size: 0.85rem;
+  margin: 0.25rem 0;
+}
+
+/* Error Banner */
+.error-banner {
+  margin-bottom: 2rem;
+  background: #2a1a1a;
+  border: 2px solid #aa3333;
+  border-radius: 12px;
+  padding: 2rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-content h3 {
+  color: #ff6b6b;
+  margin-bottom: 0.5rem;
+}
+
+.error-content p {
+  color: #d0d0d0;
+  margin-bottom: 1.5rem;
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-retry,
+.btn-change-url {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.btn-retry {
+  background: #667eea;
+  border-color: #667eea;
+  color: #ffffff;
+}
+
+.btn-retry:hover {
+  background: #5568d3;
+  border-color: #5568d3;
+}
+
+.btn-change-url {
+  background: transparent;
+  border-color: #666;
+  color: #ffffff;
+}
+
+.btn-change-url:hover {
+  background: #2a2a2a;
+  border-color: #888;
+}
+
+/* Video Player Container */
+.video-player-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.video-wrapper {
+  position: relative;
+  background: #000000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+}
+
+.video-js {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  backdrop-filter: blur(5px);
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-overlay p {
+  margin-top: 1rem;
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+/* Player Controls */
+.player-controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0) 20%,
+    rgba(0, 0, 0, 0) 70%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  cursor: default;
+}
+
+.player-controls.show {
+  opacity: 1;
+}
+
+.player-controls.hide {
+  opacity: 0;
+  cursor: none;
+}
+
+/* Center Controls */
+.center-controls {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-center-play {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-center-play:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+}
+
+.btn-center-play:active {
+  transform: scale(0.95);
+}
+
+/* Skip Controls */
+.skip-controls {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2rem;
+  pointer-events: none;
+}
+
+.btn-skip {
+  width: 70px;
+  height: 70px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+}
+
+.btn-skip:hover {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.1);
+}
+
+.skip-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.skip-text {
+  font-size: 0.7rem;
+  margin-top: 0.2rem;
+}
+
+/* Skip Animation */
+.skip-animation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-size: 1.5rem;
+  color: #ffffff;
+  animation: skipFeedback 0.5s ease-out;
+  pointer-events: none;
+}
+
+@keyframes skipFeedback {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Bottom Controls */
+.bottom-controls {
+  padding: 1rem;
+  padding-bottom: 1.5rem;
+}
+
+/* Timeline */
+.timeline-container {
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.timeline {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  position: relative;
+  transition: height 0.2s;
+}
+
+.timeline-container:hover .timeline {
+  height: 8px;
+}
+
+.timeline-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 3px;
+  transition: width 0.1s;
+}
+
+.timeline-handle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.timeline-container:hover .timeline-handle {
+  opacity: 1;
+}
+
+/* Controls Bar */
+.controls-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.controls-left,
+.controls-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-control {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.btn-control:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.btn-control:active {
+  transform: scale(0.95);
+}
+
+/* Volume Control */
+.volume-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.volume-slider-container {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  padding: 1rem 0.5rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   FIX: Vertical volume slider
+   REMOVED:  writing-mode: bt-lr        ← invalid value, does nothing
+   REMOVED:  -webkit-appearance: slider-vertical  ← deprecated, triggers warning
+
+   REPLACED WITH:
+     writing-mode: vertical-lr   lays the slider track top-to-bottom
+     direction: rtl               flips fill direction so 0=bottom, 1=top
+                                  (matches natural "turn up the volume" UX)
+     appearance: auto             lets the browser render a standard slider
+                                  without any vendor-specific skin
+
+   Supported: Chrome 89+, Firefox 81+, Safari 15.4+, Edge 89+
+   ───────────────────────────────────────────────────────────────────────── */
+.volume-slider {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: auto;
+  appearance: auto;
+  width: 6px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+/* Time Display */
+.time-display {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  color: #ffffff;
+  min-width: 120px;
+}
+
+.time-separator {
+  color: #888;
+}
+
+/* Track Selectors and Menus */
+.track-selector,
+.playback-rate-control {
+  position: relative;
+}
+
+.track-menu,
+.playback-rate-menu {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  min-width: 200px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  animation: menuSlideUp 0.2s ease-out;
+}
+
+@keyframes menuSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menu-header {
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #b0b0b0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-align: left;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-item.active {
+  background: rgba(102, 126, 234, 0.2);
+  color: #667eea;
+}
+
+.track-label {
+  flex: 1;
+}
+
+.track-language {
+  color: #888;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+
+.checkmark {
+  margin-left: 0.5rem;
+  color: #667eea;
+  font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .app-main {
+    padding: 1rem;
+  }
+
+  .url-input-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .controls-bar {
+    gap: 0.3rem;
+  }
+
+  .btn-control {
+    font-size: 1rem;
+    padding: 0.4rem;
+  }
+
+  .time-display {
+    font-size: 0.8rem;
+    min-width: 100px;
+  }
+
+  .btn-center-play {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+
+  .btn-skip {
+    width: 50px;
+    height: 50px;
+  }
+
+  .skip-icon {
+    font-size: 1.2rem;
+  }
+
+  .skip-text {
+    font-size: 0.6rem;
+  }
+
+  .skip-controls {
+    padding: 0 1rem;
+  }
+
+  .error-actions {
+    flex-direction: column;
+  }
+
+  .app-footer kbd {
+    display: inline-block;
+    margin: 0.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 1.5rem 1rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .controls-left,
+  .controls-right {
+    gap: 0.2rem;
+  }
+
+  .btn-control {
+    font-size: 0.9rem;
+    padding: 0.3rem;
+  }
+}
+
+/* Video.js Custom Overrides */
+.video-js .vjs-big-play-button {
+  display: none;
+}
+
+.video-js .vjs-control-bar {
+  display: none;
+}
+
+.video-js .vjs-loading-spinner {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TIMELINE ADDITIONS — append these rules to your existing App.css
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Outer wrapper sits above the control bar ───────────────────────── */
+.timeline-outer {
+  position: relative;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;          /* hit-area padding above and below bar */
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── The clickable bar ───────────────────────────────────────────────── */
+.timeline-bar {
+  position: relative;
+  width: 100%;
+  touch-action: none;         /* prevent page scroll while scrubbing on mobile */
+}
+
+/* ── Inner track ─────────────────────────────────────────────────────── */
+.timeline-track {
+  position: relative;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  transition: height 0.15s ease;
+  overflow: visible;
+}
+
+.timeline-bar.is-hovered .timeline-track,
+.timeline-bar.is-dragging .timeline-track {
+  height: 8px;
+}
+
+/* ── Buffered regions (grey fill behind progress) ────────────────────── */
+.timeline-buffered {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* ── Hover ghost (translucent forward-fill while hovering) ───────────── */
+.timeline-hover-ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* ── Actual progress fill ────────────────────────────────────────────── */
+.timeline-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 3px;
+  pointer-events: none;
+  transition: width 0.08s linear;
+}
+
+/* ── Scrubber handle ─────────────────────────────────────────────────── */
+.timeline-handle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.5), 0 2px 8px rgba(0,0,0,0.4);
+  pointer-events: none;
+  transition: transform 0.15s ease;
+  will-change: transform;
+}
+
+.timeline-bar.is-hovered .timeline-handle,
+.timeline-bar.is-dragging .timeline-handle {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Scale up handle while actively dragging */
+.timeline-bar.is-dragging .timeline-handle {
+  transform: translate(-50%, -50%) scale(1.3);
+}
+
+/* ── Chapter markers ─────────────────────────────────────────────────── */
+.timeline-chapter-marker {
+  position: absolute;
+  top: -2px;
+  width: 3px;
+  height: calc(100% + 4px);
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 2px;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+/* ── Tooltip: thumbnail + time label ────────────────────────────────── */
+.timeline-tooltip {
+  position: absolute;
+  bottom: calc(100% + 12px);   /* sits above the bar */
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  z-index: 200;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.7));
+  animation: tooltipPop 0.12s ease-out both;
+}
+
+@keyframes tooltipPop {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0)   scale(1);    }
+}
+
+/* ── Thumbnail image ─────────────────────────────────────────────────── */
+.timeline-thumb {
+  display: block;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  background: #111;
+  object-fit: cover;
+}
+
+/* Placeholder shown while thumbnail is generating */
+.timeline-thumb--placeholder {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2a2a4e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-thumb--placeholder::after {
+  content: '';
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ── Time label inside tooltip ───────────────────────────────────────── */
+.timeline-tooltip-time {
+  background: rgba(0, 0, 0, 0.85);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .timeline-thumb {
+    width: 110px !important;
+    height: 62px !important;
+  }
+  .timeline-tooltip {
+    bottom: calc(100% + 8px);
+  }
+}
+
+/* ── UrlInput inline error ───────────────────────────────────────────── */
+.url-input--error {
+  border-color: #aa3333 !important;
+}
+.input-error {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   QUALITY SELECTOR — append these to your existing App.css
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Toolbar button ──────────────────────────────────────────────────── */
+.quality-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+}
+.quality-btn-icon { font-size: 1rem; }
+.quality-btn-label { white-space: nowrap; }
+
+/* ── Network speed badge on button ──────────────────────────────────── */
+.net-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+}
+.net-badge--fast     { background: #1a5c2e; color: #4ade80; }
+.net-badge--medium   { background: #5c4a00; color: #fbbf24; }
+.net-badge--slow     { background: #5c1a1a; color: #f87171; }
+.net-badge--unknown  { background: transparent; }
+.net-badge--detecting{ background: #2a2a3a; color: #aaa; animation: pulse 1s ease-in-out infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Dropdown menu ───────────────────────────────────────────────────── */
+.quality-menu {
+  min-width: 240px;
+}
+
+/* Menu header row */
+.quality-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem 0.5rem;
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b0b0b0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.quality-speed-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quality-speed-value {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #e0e0e0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.quality-speed-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.quality-speed-dot.net-badge--fast   { background: #4ade80; }
+.quality-speed-dot.net-badge--medium { background: #fbbf24; }
+.quality-speed-dot.net-badge--slow   { background: #f87171; }
+.quality-speed-dot.net-badge--unknown{ background: #888; }
+
+.quality-speed-detecting {
+  font-size: 0.75rem;
+  color: #888;
+  font-style: italic;
+  text-transform: none;
+}
+
+.quality-redetect-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #aaa;
+  font-size: 0.9rem;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+}
+.quality-redetect-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+/* ── Divider between Auto and manual levels ──────────────────────────── */
+.quality-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 4px 0;
+}
+
+/* ── Each quality row ────────────────────────────────────────────────── */
+.quality-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  gap: 8px;
+}
+
+.quality-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.quality-item-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quality-item-desc {
+  font-size: 0.75rem;
+  color: #888;
+}
+.quality-item-desc--warn { color: #f87171; }
+
+.quality-item-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ── Small inline badges (HD / Best / AUTO) ──────────────────────────── */
+.quality-res-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: #667eea22;
+  color: #667eea;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid #667eea44;
+}
+
+.quality-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.quality-badge--auto        { background: #1a3a5c; color: #60a5fa; }
+.quality-badge--recommended { background: #1a5c2e; color: #4ade80; }
+
+/* ── Dim levels the connection can't sustain ─────────────────────────── */
+.quality-item--slow {
+  opacity: 0.5;
+}
+.quality-item--slow:hover {
+  opacity: 0.75;
+}
+.quality-item--slow .quality-item-label {
+  color: #aaa;
+}
