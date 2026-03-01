@@ -80,13 +80,18 @@ function PlayerControls({
   isPlayingRef.current = isPlaying;
 
   useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-      skipFeedbackRef.current.forEach(clearTimeout);
-    };
-  }, []);
+  mountedRef.current = true;
+
+  const timeouts = skipFeedbackRef.current;
+  const hideTimeout = hideTimeoutRef.current;
+
+  return () => {
+    mountedRef.current = false;
+
+    if (hideTimeout) clearTimeout(hideTimeout);
+    timeouts.forEach(clearTimeout);
+  };
+}, []);
 
   const closePlaybackMenu = useCallback(() => setShowPlaybackMenu(false), []);
   useClickOutside(playbackMenuRef, closePlaybackMenu, showPlaybackMenu);
