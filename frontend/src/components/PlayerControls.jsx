@@ -1,7 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import AudioTrackSelector from './AudioTrackSelector';
 import SubtitleSelector from './SubtitleSelector';
-import QualitySelector from './QualitySelector';
 import TimelineBar from './Timelinebar';
 import useClickOutside from './UseClickOutside';
 
@@ -26,8 +25,6 @@ function PlayerControls({
   playbackRate,
   audioTracks,
   textTracks,
-  qualitySources,   // kept in props signature so VideoPlayer doesn't need changing,
-                    // but QualitySelector is self-contained and doesn't consume it
   selectedAudioTrack,
   selectedTextTrack,
   playerRef,
@@ -40,7 +37,6 @@ function PlayerControls({
   onFullscreen,
   onAudioTrackChange,
   onTextTrackChange,
-  onQualityChange,
   onChangeUrl,
 }) {
   const [showControls,     setShowControls]     = useState(true);
@@ -118,9 +114,15 @@ function PlayerControls({
         </div>
       )}
 
-      {/* Bottom */}
+      {/* Bottom bar */}
       <div className="bottom-controls" onClick={(e) => e.stopPropagation()}>
 
+        {/*
+          TimelineBar owns both seek optimisation hooks internally.
+          It receives proxyUrl + duration so useSeekOptimizer can:
+            • HEAD the file for Content-Length on mount
+            • Fire predictive byte-range prefetches on hover
+        */}
         <TimelineBar
           currentTime={currentTime}
           duration={duration}
@@ -137,15 +139,26 @@ function PlayerControls({
             <button className="btn-control" onClick={() => handleSkip(-10)} aria-label="Skip back 10 seconds">⏪</button>
             <button className="btn-control" onClick={() => handleSkip(10)}  aria-label="Skip forward 10 seconds">⏩</button>
 
-            <div className="volume-control" onMouseEnter={() => setShowVolumeSlider(true)} onMouseLeave={() => setShowVolumeSlider(false)}>
-              <button className="btn-control" onClick={() => onVolumeChange(volume > 0 ? 0 : 1)} aria-label={volume === 0 ? 'Unmute' : 'Mute'}>
+            <div
+              className="volume-control"
+              onMouseEnter={() => setShowVolumeSlider(true)}
+              onMouseLeave={() => setShowVolumeSlider(false)}
+            >
+              <button
+                className="btn-control"
+                onClick={() => onVolumeChange(volume > 0 ? 0 : 1)}
+                aria-label={volume === 0 ? 'Unmute' : 'Mute'}
+              >
                 {volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'}
               </button>
               {showVolumeSlider && (
                 <div className="volume-slider-container">
-                  <input type="range" min="0" max="1" step="0.01" value={volume}
+                  <input
+                    type="range" min="0" max="1" step="0.01" value={volume}
                     onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
-                    className="volume-slider" aria-label="Volume" />
+                    className="volume-slider"
+                    aria-label="Volume"
+                  />
                 </div>
               )}
             </div>
@@ -173,31 +186,26 @@ function PlayerControls({
               />
             )}
 
-            {/*
-              FIX: QualitySelector is ALWAYS rendered.
-              The old guard `qualitySources?.length > 0` was wrong because
-              QualitySelector is fully self-contained — it runs useAdaptiveQuality
-              internally and never reads `qualitySources`. Gating on an array that
-              is often empty (or unused by this component) silently suppressed the
-              entire quality UI.
-
-              The dead `sources={qualitySources}` prop has also been removed; it
-              was accepted by no prop in QualitySelector and gave a false impression
-              that external source data was required to render the control.
-            */}
-            <QualitySelector onQualityChange={onQualityChange} />
-
             <div className="playback-rate-control" ref={playbackMenuRef}>
-              <button className="btn-control" onClick={() => setShowPlaybackMenu((p) => !p)}
-                aria-haspopup="listbox" aria-expanded={showPlaybackMenu} aria-label="Playback speed">
+              <button
+                className="btn-control"
+                onClick={() => setShowPlaybackMenu((p) => !p)}
+                aria-haspopup="listbox"
+                aria-expanded={showPlaybackMenu}
+                aria-label="Playback speed"
+              >
                 ⚡ {playbackRate}x
               </button>
               {showPlaybackMenu && (
                 <div className="playback-rate-menu" role="listbox">
                   {PLAYBACK_RATES.map((rate) => (
-                    <button key={rate} role="option" aria-selected={playbackRate === rate}
+                    <button
+                      key={rate}
+                      role="option"
+                      aria-selected={playbackRate === rate}
                       className={`menu-item${playbackRate === rate ? ' active' : ''}`}
-                      onClick={() => handleRateSelect(rate)}>
+                      onClick={() => handleRateSelect(rate)}
+                    >
                       {rate}x {rate === 1 && '(Normal)'}
                     </button>
                   ))}
@@ -205,8 +213,8 @@ function PlayerControls({
               )}
             </div>
 
-            <button className="btn-control" onClick={onChangeUrl} aria-label="Change URL" title="Change video URL">🔗</button>
-            <button className="btn-control" onClick={onFullscreen} aria-label="Fullscreen" title="Fullscreen (or double-click)">⛶</button>
+            <button className="btn-control" onClick={onChangeUrl}  aria-label="Change URL"  title="Change video URL">🔗</button>
+            <button className="btn-control" onClick={onFullscreen} aria-label="Fullscreen"   title="Fullscreen (or double-click)">⛶</button>
           </div>
         </div>
       </div>

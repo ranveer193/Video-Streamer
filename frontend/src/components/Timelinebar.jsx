@@ -1,27 +1,18 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import useVideoThumbnails, { THUMB_WIDTH, THUMB_HEIGHT } from './UseVideoThumbnails';
-import useSeekOptimizer from './UseSeekOptimiser';
+import useSeekOptimizer from './UseSeekOptimiser'
 
-/**
- * TimelineBar
- *
- * WHAT CHANGED vs previous version:
- *   ✂️  prewarmAt removed from all call sites (was the source of bytes=0-0 spam)
- *   ✅  Everything else identical: thumbnails, buffered regions, fastSeek,
- *       touch support, chapter markers, hover tooltip, drag handle
- */
 function TimelineBar({ currentTime, duration, playerRef, proxyUrl, onSeek, chapters = [] }) {
   const barRef       = useRef(null);
-  const [hoverPos,   setHoverPos]   = useState(null);
+  // FIX (Issue 9): store hoverTime directly instead of a fraction.
+  // Previously: hoverPos (fraction) → hoverTime = hoverPos * duration on every render.
+  // Now: one value, no derived multiply, no stale fraction when duration changes.
+  const [hoverTime,  setHoverTime]  = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // prewarmAt intentionally NOT destructured — removed entirely
-  const { seekTo, fastSeekTo, bufferedRegions } = useSeekOptimizer(playerRef);
+  const { seekTo, fastSeekTo, hintPosition, bufferedRegions } = useSeekOptimizer(
+    playerRef, proxyUrl, duration
+  );
 
-  const { getThumbnail, hintPosition, ready: thumbsReady } =
-    useVideoThumbnails(proxyUrl, duration, { interval: 5 });
-
-  // ── Helpers ────────────────────────────────────────────────────────────
   const formatTime = (s) => {
     if (!s || isNaN(s)) return '0:00';
     const h   = Math.floor(s / 3600);
@@ -32,112 +23,126 @@ function TimelineBar({ currentTime, duration, playerRef, proxyUrl, onSeek, chapt
       : `${m}:${String(sec).padStart(2, '0')}`;
   };
 
-  const posToTime = useCallback((clientX) => {
+  // Single getBoundingClientRect() call per event — feeds fraction AND time.
+  // Previously two separate callbacks each calling getBoundingClientRect()
+  // which forces two layout reads per mousemove/touchmove.
+  const clientXToValues = useCallback((clientX) => {
     const rect = barRef.current?.getBoundingClientRect();
-    if (!rect) return 0;
-    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) * duration;
+    if (!rect) return { fraction: 0, time: 0 };
+    const fraction = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    return { fraction, time: fraction * duration };
   }, [duration]);
-
-  const posToFraction = useCallback((clientX) => {
-    const rect = barRef.current?.getBoundingClientRect();
-    if (!rect) return 0;
-    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-  }, []);
 
   // ── Mouse events ───────────────────────────────────────────────────────
   const handleMouseMove = useCallback((e) => {
-    const fraction = posToFraction(e.clientX);
-    const time     = fraction * duration;
-    setHoverPos(fraction);
-    hintPosition(time);     // request thumbnail — no prewarm fetch
+    const { fraction, time } = clientXToValues(e.clientX);
+    setHoverTime(duration > 0 ? time : null);
+    hintPosition(time);
     if (isDragging) fastSeekTo(time);
-  }, [posToFraction, duration, isDragging, fastSeekTo, hintPosition]);
+    // Expose fraction only where the CSS hover-ghost needs it
+    if (barRef.current) {
+      barRef.current.style.setProperty('--hover-frac', String(fraction));
+    }
+  }, [clientXToValues, duration, isDragging, fastSeekTo, hintPosition]);
 
   const handleMouseLeave = useCallback(() => {
-    if (!isDragging) setHoverPos(null);
+    if (!isDragging) setHoverTime(null);
   }, [isDragging]);
 
   const handleMouseDown = useCallback((e) => {
     e.preventDefault();
     setIsDragging(true);
-    fastSeekTo(posToTime(e.clientX));
-  }, [posToTime, fastSeekTo]);
+    fastSeekTo(clientXToValues(e.clientX).time);
+  }, [clientXToValues, fastSeekTo]);
 
   const handleClick = useCallback((e) => {
     if (isDragging) return;
-    seekTo(posToTime(e.clientX));
-  }, [isDragging, seekTo, posToTime]);
+    seekTo(clientXToValues(e.clientX).time);
+  }, [isDragging, seekTo, clientXToValues]);
+
+  // ── Keyboard seek (required for role="slider" accessibility) ──────────
+  const handleKeyDown = useCallback((e) => {
+    if (!duration) return;
+    switch (e.key) {
+      case 'ArrowLeft':  e.preventDefault(); seekTo(Math.max(0, currentTime - 5));        break;
+      case 'ArrowRight': e.preventDefault(); seekTo(Math.min(duration, currentTime + 5)); break;
+      case 'PageDown':   e.preventDefault(); seekTo(Math.max(0, currentTime - 30));       break;
+      case 'PageUp':     e.preventDefault(); seekTo(Math.min(duration, currentTime + 30));break;
+      case 'Home':       e.preventDefault(); seekTo(0);                                   break;
+      case 'End':        e.preventDefault(); seekTo(duration);                            break;
+      default: break;
+    }
+  }, [duration, currentTime, seekTo]);
 
   // ── Touch events ───────────────────────────────────────────────────────
   const handleTouchStart = useCallback((e) => {
     setIsDragging(true);
-    fastSeekTo(posToTime(e.touches[0].clientX));
-  }, [posToTime, fastSeekTo]);
+    fastSeekTo(clientXToValues(e.touches[0].clientX).time);
+  }, [clientXToValues, fastSeekTo]);
 
   const handleTouchMove = useCallback((e) => {
-    e.preventDefault();
-    const fraction = posToFraction(e.touches[0].clientX);
-    setHoverPos(fraction);
-    fastSeekTo(fraction * duration);
-  }, [posToFraction, duration, fastSeekTo]);
+    // Note: actual preventDefault() is applied in the native listener below
+    // because React 17+ touch listeners are passive and ignore it.
+    const { fraction, time } = clientXToValues(e.touches[0].clientX);
+    setHoverTime(duration > 0 ? time : null);
+    fastSeekTo(time);
+    if (barRef.current) {
+      barRef.current.style.setProperty('--hover-frac', String(fraction));
+    }
+  }, [clientXToValues, duration, fastSeekTo]);
 
   const handleTouchEnd = useCallback((e) => {
     setIsDragging(false);
-    setHoverPos(null);
-    seekTo(posToTime(e.changedTouches[0].clientX));
-  }, [posToTime, seekTo]);
+    setHoverTime(null);
+    seekTo(clientXToValues(e.changedTouches[0].clientX).time);
+  }, [clientXToValues, seekTo]);
 
-  // ── Global mouseup so drag release outside bar works ──────────────────
+  // Non-passive native touchmove so preventDefault() actually suppresses
+  // page scroll during timeline scrubbing on mobile.
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const prevent = (e) => { if (isDragging) e.preventDefault(); };
+    el.addEventListener('touchmove', prevent, { passive: false });
+    return () => el.removeEventListener('touchmove', prevent);
+  }, [isDragging]);
+
+  // ── Global mouseup — release drag outside the bar ─────────────────────
   useEffect(() => {
     if (!isDragging) return;
     const up = (e) => {
       setIsDragging(false);
-      setHoverPos(null);
-      seekTo(posToTime(e.clientX));
+      setHoverTime(null);
+      seekTo(clientXToValues(e.clientX).time);
     };
     window.addEventListener('mouseup', up);
     return () => window.removeEventListener('mouseup', up);
-  }, [isDragging, seekTo, posToTime]);
+  }, [isDragging, seekTo, clientXToValues]);
 
   // ── Derived values ─────────────────────────────────────────────────────
-  const progress  = duration > 0 ? (currentTime / duration) * 100 : 0;
-  const hoverTime = hoverPos !== null ? hoverPos * duration : null;
-  const thumbnail = hoverTime !== null ? getThumbnail(hoverTime) : null;
-
-  const barWidth    = barRef.current?.offsetWidth ?? 600;
-  const tooltipLeft = hoverPos !== null
-    ? Math.max(THUMB_WIDTH / 2, Math.min(barWidth - THUMB_WIDTH / 2, hoverPos * barWidth))
-    : 0;
+  const progress    = duration > 0 ? (currentTime / duration) * 100 : 0;
+  // hoverFrac only needed for tooltip positioning — derived once per render
+  const hoverFrac   = hoverTime !== null && duration > 0 ? hoverTime / duration : null;
 
   return (
     <div className="timeline-outer">
 
-      {/* Thumbnail tooltip */}
+      {/* Lightweight time-only tooltip — no canvas, no image */}
       {hoverTime !== null && (
-        <div className="timeline-tooltip" style={{ left: tooltipLeft }}>
-          {thumbsReady && thumbnail ? (
-            <img
-              className="timeline-thumb"
-              src={thumbnail}
-              width={THUMB_WIDTH}
-              height={THUMB_HEIGHT}
-              alt={formatTime(hoverTime)}
-              draggable={false}
-            />
-          ) : (
-            <div
-              className="timeline-thumb timeline-thumb--placeholder"
-              style={{ width: THUMB_WIDTH, height: THUMB_HEIGHT }}
-            />
-          )}
+        <div
+          className="timeline-tooltip"
+          style={{
+            left:      `${(hoverFrac ?? 0) * 100}%`,
+            transform: 'translateX(-50%)',
+          }}
+        >
           <span className="timeline-tooltip-time">{formatTime(hoverTime)}</span>
         </div>
       )}
 
-      {/* Bar */}
       <div
         ref={barRef}
-        className={`timeline-bar${isDragging ? ' is-dragging' : ''}${hoverPos !== null ? ' is-hovered' : ''}`}
+        className={`timeline-bar${isDragging ? ' is-dragging' : ''}${hoverTime !== null ? ' is-hovered' : ''}`}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onMouseDown={handleMouseDown}
@@ -145,6 +150,7 @@ function TimelineBar({ currentTime, duration, playerRef, proxyUrl, onSeek, chapt
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onKeyDown={handleKeyDown}
         role="slider"
         aria-label="Seek"
         aria-valuemin={0}
@@ -155,7 +161,6 @@ function TimelineBar({ currentTime, duration, playerRef, proxyUrl, onSeek, chapt
       >
         <div className="timeline-track">
 
-          {/* Buffered regions */}
           {bufferedRegions.map((region, i) =>
             duration > 0 ? (
               <div
@@ -169,15 +174,15 @@ function TimelineBar({ currentTime, duration, playerRef, proxyUrl, onSeek, chapt
             ) : null
           )}
 
-          {/* Hover ghost */}
-          {hoverPos !== null && (
-            <div className="timeline-hover-ghost" style={{ width: `${hoverPos * 100}%` }} />
+          {hoverFrac !== null && (
+            <div
+              className="timeline-hover-ghost"
+              style={{ width: `${hoverFrac * 100}%` }}
+            />
           )}
 
-          {/* Progress */}
           <div className="timeline-progress" style={{ width: `${progress}%` }} />
 
-          {/* Chapter markers */}
           {chapters.map((ch) =>
             duration > 0 ? (
               <div
@@ -189,7 +194,6 @@ function TimelineBar({ currentTime, duration, playerRef, proxyUrl, onSeek, chapt
             ) : null
           )}
 
-          {/* Handle */}
           <div
             className="timeline-handle"
             style={{ left: `${progress}%` }}

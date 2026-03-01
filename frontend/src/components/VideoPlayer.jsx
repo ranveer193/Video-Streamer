@@ -3,20 +3,38 @@ import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import PlayerControls from './PlayerControls';
 
-const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+const PROXY_BASE        = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+const RESUME_INTERVAL_S = 5;
 
-function getProxyUrl(url, quality) {
-  // FIX 3: When quality is 'original' (or missing), omit the &quality param
-  // so the proxy passes the stream through unchanged — matching old behavior.
-  const base = `${PROXY_URL}/stream?url=${encodeURIComponent(url)}`;
-  return quality && quality !== 'original' ? `${base}&quality=${encodeURIComponent(quality)}` : base;
+function getProxyUrl(videoUrl) {
+  return `${PROXY_BASE}/stream?url=${encodeURIComponent(videoUrl)}`;
 }
 
-function VideoPlayer({ videoUrl, qualitySources, onError, onChangeUrl }) {
-  const containerRef = useRef(null);
-  const playerRef    = useRef(null);
-  const [player,     setPlayer]     = useState(null);
-  const [proxyUrl,   setProxyUrl]   = useState('');
+// Stable key always uses the original videoUrl — not the proxy URL.
+// Previously the key was written with vjsPlayer.currentSrc() (the proxy URL)
+// but read with videoUrl (the original), so resume never matched.
+function getResumeKey(videoUrl) {
+  return `playback_${videoUrl}`;
+}
+
+// FIX (Issue 8): wrap ALL localStorage access in try-catch.
+// Safari in ITP / private mode and some locked-down WebViews throw
+// SecurityError on both getItem and setItem, not just setItem.
+function resumeGet(key) {
+  try { return localStorage.getItem(key); }
+  catch { return null; }
+}
+function resumeSet(key, value) {
+  try { localStorage.setItem(key, value); }
+  catch { /* quota or locked storage — silent */ }
+}
+
+function VideoPlayer({ videoUrl, onError, onChangeUrl }) {
+  const containerRef  = useRef(null);
+  const playerRef     = useRef(null);
+  const lastSavedRef  = useRef(0);   // tracks last saved time to write exactly once per interval
+  const [player,      setPlayer]      = useState(null);
+  const [proxyUrl,    setProxyUrl]    = useState('');
 
   const [isLoading,          setIsLoading]          = useState(true);
   const [currentTime,        setCurrentTime]        = useState(0);
@@ -29,15 +47,14 @@ function VideoPlayer({ videoUrl, qualitySources, onError, onChangeUrl }) {
   const [selectedAudioTrack, setSelectedAudioTrack] = useState(0);
   const [selectedTextTrack,  setSelectedTextTrack]  = useState(-1);
 
-  // FIX 1: Default to 'original' instead of null so the source effect is
-  // never blocked on mount. The proxy receives no &quality param, preserving
-  // the old passthrough behavior until QualitySelector resolves auto-detect.
-  const [currentQuality, setCurrentQuality] = useState('original');
+  // Stable refs for values used inside VJS event handlers so closures
+  // always read current values without needing to re-register listeners.
+  const onErrorRef  = useRef(onError);
+  const videoUrlRef = useRef(videoUrl);
+  useEffect(() => { onErrorRef.current  = onError;   }, [onError]);
+  useEffect(() => { videoUrlRef.current = videoUrl;  }, [videoUrl]);
 
-  const onErrorRef = useRef(onError);
-  useEffect(() => { onErrorRef.current = onError; }, [onError]);
-
-  // ── Init effect (once per mount) ──────────────────────────────────────
+  // ── Init — runs once ──────────────────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current || playerRef.current) return;
 
@@ -50,16 +67,18 @@ function VideoPlayer({ videoUrl, qualitySources, onError, onChangeUrl }) {
     const vjsPlayer = videojs(videoElement, {
       controls:      false,
       autoplay:      false,
-      preload:       'auto',
+      // preload:'metadata' — fetch only duration/dimensions on load.
+      // 'auto' would immediately trigger 30-50 range requests for a 2 GB file.
+      preload:       'metadata',
       fluid:         true,
       responsive:    true,
       aspectRatio:   '16:9',
       playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
       html5: {
         vhs: {
+          overrideNative:           true,
           enableLowInitialPlaylist: true,
           smoothQualityChange:      true,
-          overrideNative:           true,
         },
         nativeVideoTracks: false,
         nativeAudioTracks: false,
@@ -72,46 +91,64 @@ function VideoPlayer({ videoUrl, qualitySources, onError, onChangeUrl }) {
 
     vjsPlayer.on('loadedmetadata', () => {
       setDuration(vjsPlayer.duration());
+
       const atl = vjsPlayer.audioTracks();
       if (atl?.length > 0) {
         const tracks = [];
         for (let i = 0; i < atl.length; i++) {
-          tracks.push({ id: atl[i].id, label: atl[i].label || `Audio ${i + 1}`, language: atl[i].language || '', enabled: atl[i].enabled });
+          tracks.push({
+            id:       atl[i].id,
+            label:    atl[i].label    || `Audio ${i + 1}`,
+            language: atl[i].language || '',
+            enabled:  atl[i].enabled,
+          });
         }
         setAudioTracks(tracks);
       }
+
       const ttl = vjsPlayer.textTracks();
       if (ttl?.length > 0) {
         const tracks = [];
         for (let i = 0; i < ttl.length; i++) {
           const t = ttl[i];
           if (t.kind === 'subtitles' || t.kind === 'captions') {
-            tracks.push({ id: i, label: t.label || `Subtitle ${i + 1}`, language: t.language || '', kind: t.kind });
+            tracks.push({
+              id:       i,
+              label:    t.label    || `Subtitle ${i + 1}`,
+              language: t.language || '',
+              kind:     t.kind,
+            });
           }
         }
         setTextTracks(tracks);
       }
     });
 
-    vjsPlayer.on('canplay',     () => setIsLoading(false));
-    vjsPlayer.on('waiting',     () => setIsLoading(true));
-    vjsPlayer.on('playing',     () => { setIsLoading(false); setIsPlaying(true); });
-    vjsPlayer.on('pause',       () => setIsPlaying(false));
-    vjsPlayer.on('volumechange',() => setVolume(vjsPlayer.volume()));
-    vjsPlayer.on('ratechange',  () => setPlaybackRate(vjsPlayer.playbackRate()));
+    vjsPlayer.on('canplay',      () => setIsLoading(false));
+    vjsPlayer.on('waiting',      () => setIsLoading(true));
+    vjsPlayer.on('playing',      () => { setIsLoading(false); setIsPlaying(true); });
+    vjsPlayer.on('pause',        () => setIsPlaying(false));
+    vjsPlayer.on('volumechange', () => setVolume(vjsPlayer.volume()));
+    vjsPlayer.on('ratechange',   () => setPlaybackRate(vjsPlayer.playbackRate()));
 
     vjsPlayer.on('timeupdate', () => {
       const time = vjsPlayer.currentTime();
       setCurrentTime(time);
-      if (Math.floor(time) % 5 === 0) {
-        localStorage.setItem(`playback_${vjsPlayer.currentSrc()}`, String(time));
+
+      // Write resume position at most once per RESUME_INTERVAL_S.
+      // Previously: Math.floor(time) % 5 === 0 fired up to 10 times per
+      // checkpoint because timeupdate runs 4-8 times/sec and the condition
+      // stays true for the entire second window (5.0, 5.1, 5.2 ... 5.9).
+      if (time - lastSavedRef.current >= RESUME_INTERVAL_S) {
+        lastSavedRef.current = time;
+        resumeSet(getResumeKey(videoUrlRef.current), String(time));
       }
     });
 
     vjsPlayer.on('error', () => {
       const error = vjsPlayer.error();
-      let msg = { title: 'Playback Error', message: 'Failed to load video.' };
-      if (error?.code === 2) msg = { title: 'Network Error', message: 'Failed to fetch from proxy. URL may have expired.' };
+      let msg = { title: 'Playback Error',       message: 'Failed to load video.' };
+      if (error?.code === 2) msg = { title: 'Network Error',        message: 'Failed to fetch from proxy. URL may have expired.' };
       if (error?.code === 4) msg = { title: 'Format Not Supported', message: 'This video format is not supported.' };
       setIsLoading(false);
       onErrorRef.current(msg);
@@ -124,53 +161,38 @@ function VideoPlayer({ videoUrl, qualitySources, onError, onChangeUrl }) {
       playerRef.current = null;
       setPlayer(null);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Source update effect ──────────────────────────────────────────────
+  // ── Source update ─────────────────────────────────────────────────────
   useEffect(() => {
     const vjs = playerRef.current;
-    if (!vjs || vjs.isDisposed()) return;
+    if (!vjs || vjs.isDisposed() || !videoUrl) return;
 
-    // FIX 2: The old `if (currentQuality === null) return;` guard has been
-    // removed. Since currentQuality now initialises to 'original', this
-    // effect runs immediately on mount and Video.js receives its first src
-    // without waiting for QualitySelector's auto-detect to complete.
-    // When auto-detect later calls setCurrentQuality('720') (for example),
-    // this effect re-runs and handleQualityChange-style time/play restoration
-    // happens naturally via the logic below.
-
-    const url = getProxyUrl(videoUrl, currentQuality); // FIX 3 wired in here
+    const url = getProxyUrl(videoUrl);
     setProxyUrl(url);
     setIsLoading(true);
+    setDuration(0);
+    setCurrentTime(0);
+    setIsPlaying(false);     // reset play state so UI doesn't show "pause" while loading
     setAudioTracks([]);
     setTextTracks([]);
     setSelectedAudioTrack(0);
     setSelectedTextTrack(-1);
-
-    // Preserve time + play-state across quality switches so there's no flicker.
-    // On first load savedTime is 0 / paused — identical to the old behavior.
-    const savedTime  = vjs.currentTime() || 0;
-    const wasPaused  = vjs.paused();
+    lastSavedRef.current = 0; // reset save pointer for the new video
 
     vjs.src({ src: url, type: 'video/mp4' });
 
-    // Restore position from localStorage on first load (videoUrl change),
-    // or from in-memory savedTime on quality-only switches.
-    const stored = localStorage.getItem(`playback_${videoUrl}`);
-    vjs.one('loadedmetadata', () => {
-      if (currentQuality === 'original' && stored) {
-        // First load: honour stored resume position.
-        vjs.currentTime(parseFloat(stored));
-      } else if (currentQuality !== 'original') {
-        // Quality switch: restore the exact position we were at.
-        vjs.currentTime(savedTime);
-        if (!wasPaused) vjs.play();
-      }
-    });
-  }, [videoUrl, currentQuality]); // re-runs on URL change OR quality change
+    // FIX (Issue 8): use safe resumeGet wrapper — can throw in Safari ITP
+    const stored = resumeGet(getResumeKey(videoUrl));
+    if (stored) {
+      vjs.one('loadedmetadata', () => {
+        if (!vjs.isDisposed()) vjs.currentTime(parseFloat(stored));
+      });
+    }
+  }, [videoUrl]);
 
   // ── Keyboard shortcuts ────────────────────────────────────────────────
-  const handleKeyPress = useCallback((e) => {
+  const handleKeyDown = useCallback((e) => {
     const vjs = playerRef.current;
     if (!vjs || vjs.isDisposed()) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -187,16 +209,16 @@ function VideoPlayer({ videoUrl, qualitySources, onError, onChangeUrl }) {
   }, []);
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [handleKeyPress]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────
   const handlePlayPause          = useCallback(() => { const v = playerRef.current; if (!v) return; v.paused() ? v.play() : v.pause(); }, []);
   const handleSeek               = useCallback((t) => playerRef.current?.currentTime(t), []);
   const handleSkip               = useCallback((s) => { const v = playerRef.current; if (!v) return; v.currentTime(Math.max(0, Math.min(v.duration(), v.currentTime() + s))); }, []);
-  const handleVolumeChange       = useCallback((v) => playerRef.current?.volume(v), []);
-  const handlePlaybackRateChange = useCallback((r) => playerRef.current?.playbackRate(r), []);
+  const handleVolumeChange       = useCallback((vol) => playerRef.current?.volume(vol), []);
+  const handlePlaybackRateChange = useCallback((r)   => playerRef.current?.playbackRate(r), []);
   const handleFullscreen         = useCallback(() => { const v = playerRef.current; if (!v) return; v.isFullscreen() ? v.exitFullscreen() : v.requestFullscreen(); }, []);
 
   const handleAudioTrackChange = useCallback((idx) => {
@@ -211,13 +233,6 @@ function VideoPlayer({ videoUrl, qualitySources, onError, onChangeUrl }) {
     const ttl = vjs.textTracks();
     for (let i = 0; i < ttl.length; i++) ttl[i].mode = i === idx ? 'showing' : 'disabled';
     setSelectedTextTrack(idx);
-  }, []);
-
-  // FIX 4: Quality changes from QualitySelector now call setCurrentQuality,
-  // which triggers the unified source effect above — no separate imperative
-  // swap needed. Time/play-state restoration is handled there consistently.
-  const handleQualityChange = useCallback((quality) => {
-    setCurrentQuality(quality);
   }, []);
 
   return (
@@ -241,7 +256,6 @@ function VideoPlayer({ videoUrl, qualitySources, onError, onChangeUrl }) {
             playbackRate={playbackRate}
             audioTracks={audioTracks}
             textTracks={textTracks}
-            qualitySources={qualitySources}
             selectedAudioTrack={selectedAudioTrack}
             selectedTextTrack={selectedTextTrack}
             playerRef={playerRef}
@@ -254,7 +268,6 @@ function VideoPlayer({ videoUrl, qualitySources, onError, onChangeUrl }) {
             onFullscreen={handleFullscreen}
             onAudioTrackChange={handleAudioTrackChange}
             onTextTrackChange={handleTextTrackChange}
-            onQualityChange={handleQualityChange}
             onChangeUrl={onChangeUrl}
           />
         )}
